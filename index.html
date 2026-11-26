@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<!--
+  Family board. Based on FamilyDashboard by stewie1308-ui (MIT License, Copyright (c) 2026 stewie1308-ui),
+  https://github.com/stewie1308-ui/FamilyDashboard . Changes: night mode 19:00-07:00, TfL trains and buses panel.
+  This file holds no personal data or keys: the board link is entered on the device and kept there.
+-->
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:wght@400;500;600&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; background: #1C1A2E; overflow: hidden; }
+  body { font-family: 'EB Garamond', Georgia, serif; color: #F3E9D2; -webkit-font-smoothing: antialiased; }
+  .cz { font-family: Cinzel, Georgia, serif; }
+  #stage { width: 1280px; height: 800px; transform-origin: 0 0; position: absolute; left: 0; top: 0; }
+  #day { box-sizing: border-box; width: 1280px; height: 800px; padding: 28px 32px; display: flex; gap: 28px; }
+  .col-l { width: 500px; flex: none; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+  .col-r { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .label { font-family: Cinzel, serif; letter-spacing: .28em; color: #C9B37E; font-size: 15px; }
+  .muted { color: #A9A2C6; }
+  .box { border: 1px solid #4A4466; border-radius: 12px; }
+  .row { display: flex; align-items: center; }
+  .grow { flex: 1; min-width: 0; }
+  .badge { display: flex; width: 40px; height: 40px; flex: none; border-radius: 999px; align-items: center; justify-content: center; }
+  .parch { background-color: #F1E6CC; background-size: cover; background-position: center; color: #2A2118; }
+  .ev { display: flex; gap: 16px; align-items: center; padding: 9px 18px; border-radius: 12px; }
+  .ev .t { font-size: 22px; font-weight: 500; line-height: 1.15; }
+  .ev .w { font-size: 15px; color: #5C4A33; }
+  .ev .time { font-family: Cinzel, serif; font-size: 20px; }
+  .chip { display: inline-flex; gap: 8px; align-items: center; padding: 5px 12px 5px 8px; border-radius: 999px; font-size: 17px; margin: 3px 8px 3px 0; }
+  .chip .ct { color: #5C4A33; }
+  .chip .cn { font-weight: 500; }
+  .wk { display: flex; gap: 16px; align-items: center; padding: 6px 0; border-top: 1px solid #D8C9A6; min-height: 40px; }
+  .wk .d { width: 76px; flex: none; display: flex; align-items: baseline; gap: 8px; }
+  .wk .dow { font-family: Cinzel, serif; font-size: 13px; letter-spacing: .18em; color: #5C4A33; }
+  .wk .dn { margin-left: auto; flex: none; display: flex; align-items: center; gap: 6px; font-style: italic; font-size: 17px; color: #6B5636; padding-left: 12px; max-width: 230px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wk .num { font-family: Cinzel, serif; font-size: 22px; font-weight: 700; }
+  .hidden { display: none !important; }
+  #night { position: absolute; inset: 0; width: 1280px; height: 800px; background: #0E0C1C; color: #A9A2C6; overflow: hidden; }
+  .star { position: absolute; border-radius: 999px; animation: tw 6s ease-in-out infinite; }
+  @keyframes tw { 0%, 100% { opacity: .25 } 50% { opacity: .85 } }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <div id="day">
+    <section class="col-l">
+      <div>
+        <div class="row" style="justify-content: space-between; align-items: baseline">
+          <span id="date" class="cz" style="font-size: 16px; letter-spacing: .32em; color: #C9B37E"></span>
+          <span id="battery" class="muted" style="font-size: 14px"></span>
+        </div>
+        <div id="clock" class="cz" style="font-size: 116px; line-height: 1; font-weight: 500"></div>
+      </div>
+      <div id="weather" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"></div>
+      <div id="drive"></div>
+      <div id="binsTonight"></div>
+      <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow: hidden">
+        <div id="todayLabel" class="label">TODAY</div>
+        <div id="today" style="display: flex; flex-direction: column; gap: 10px"></div>
+      </div>
+    </section>
+
+    <section class="col-r">
+      <div id="f1"></div>
+      <div id="weekPanel" class="parch" style="position: relative; flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 18px 28px 18px 40px; border-radius: 16px; min-height: 0">
+        <div class="row" style="justify-content: space-between; align-items: baseline">
+          <h2 class="cz" style="margin: 0; font-size: 24px; font-weight: 700">The Week Ahead</h2>
+          <span id="weekRange" style="font-size: 16px; font-style: italic; color: #5C4A33"></span>
+        </div>
+        <div id="week" style="flex: 1; overflow: hidden"></div>
+        <div class="row" style="gap: 20px; padding-top: 10px; border-top: 1px solid #D8C9A6; font-size: 16px">
+          <span id="legend" class="row" style="gap: 20px"></span>
+          <span id="notices" style="margin-left: auto; color: #5C4A33; text-align: right"></span>
+        </div>
+      </div>
+      <div class="row" style="gap: 14px; align-items: stretch">
+        <div id="bus" class="box" style="width: 236px; flex: none; padding: 16px 18px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px"></div>
+        <div id="transport" class="box grow" style="display: none; padding: 12px 18px 12px; border-radius: 14px; flex-direction: column"></div>
+        <div id="diesel" class="box grow" style="padding: 16px 18px; border-radius: 14px; display: flex; flex-direction: column; gap: 6px"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="night" class="hidden">
+    <div id="stars"></div>
+    <div style="position: absolute; left: 0; right: 0; top: 190px; display: flex; flex-direction: column; align-items: center; gap: 6px">
+      <span id="nDate" class="cz" style="font-size: 16px; letter-spacing: .34em; color: #8C86B0"></span>
+      <span id="nClock" class="cz" style="font-size: 190px; line-height: 1; font-weight: 500; color: #8C86B0"></span>
+      <span id="nMoon" class="row" style="gap: 10px; font-size: 18px; font-style: italic; color: #8C86B0"></span>
+    </div>
+    <div id="nInfo" style="position: absolute; left: 50%; bottom: 72px; transform: translateX(-50%); display: flex; gap: 36px; align-items: center; padding: 14px 28px; border: 1px solid #2E2A48; border-radius: 999px; font-size: 18px; white-space: nowrap"></div>
+    <span id="nBattery" style="position: absolute; right: 28px; bottom: 24px; font-size: 14px; color: #8C86B0"></span>
+  </div>
+</div>
+
+<script>
+// ===== PASTE YOUR BOARD LINK BETWEEN THE QUOTES (the https://script.google.com/.../exec?k=... address) =====
+var BOARD_LINK = '';   // optional: only in a PRIVATE copy (e.g. Netlify Drop), never in a public repo
+// =========================================================================================================
+
+// Standalone board: uses BOARD_LINK above, or a link saved from the setup box.
+var CFG = (function () {
+  var link = BOARD_LINK || null;
+  try {
+    var q = new URLSearchParams(location.search).get('link');
+    if (q) { link = q; localStorage.setItem('boardLink', q); }
+    if (!link) link = localStorage.getItem('boardLink');
+  } catch (e) {}
+  var m = link && link.trim().match(/^(https:\/\/script\.google\.com\/macros\/s\/[^\/?#]+\/exec)\?k=([^&\s#]+)/);
+  return m ? { api: m[1], key: m[2] } : null;
+})();
+var BOARD_KEY = CFG ? CFG.key : '';
+var API_URL = CFG ? CFG.api : '';
+var NIGHT_FROM = 19 * 60, NIGHT_TO = 7 * 60;   // night mode 19:00–07:00
+var WAKE_AT = Math.floor(NIGHT_TO / 60) + ':' + ('0' + NIGHT_TO % 60).slice(-2);
+var REFRESH_MS = 120000;
+
+// Background artwork (made with Higgsfield, see docs/design.md). Swap any of these for your own:
+// point ASSET_BASE at your own copy, or replace a single URL. Leave one '' to use plain colours.
+var ASSET_BASE = 'https://cdn.jsdelivr.net/gh/stewie1308-ui/FamilyDashboard@fdbd38af0fbc477873ca3260f64904996d90926b/assets/art/';
+var ART = {
+  parchment: ASSET_BASE + 'parchment.png',       // the cream panels
+  nightSky: ASSET_BASE + 'night-sky.png',        // night mode
+  dayBg: ASSET_BASE + 'day-background.png',      // behind the daytime board (darkened)
+  corner: ASSET_BASE + 'corner.svg'              // gold flourish on the week panel
+};
+
+// Higgsfield icon set (bold filled glyphs, 1024 grid), tinted with currentColor.
+var HFICONS = {"dinner":"<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M834 512a312 312 0 1 1-624 0 312 312 0 1 1 624 0Zm-78 0a234 234 0 1 0-468 0 234 234 0 1 0 468 0Z\"/><path d=\"M77 144a20 20 0 0 1 40 0v188h14V144a20 20 0 0 1 40 0v188h14V144a20 20 0 0 1 40 0v212c0 44-17 72-46 88v420a36 36 0 0 1-72 0V444c-29-16-30-44-30-88Z\"/><path d=\"M947 144v720a36 36 0 0 1-72 0V535h-23c-16 0-26-12-26-28V335c0-91 32-162 83-204 17-14 38-7 38 13Z\"/></g>","cat":"<g fill=\"currentColor\"><path d=\"M590 812C653 861 769 861 824 797C864 750 871 683 839 649C819 628 790 635 782 662C775 685 750 696 729 686C705 675 704 649 714 625C738 565 814 544 870 585C949 642 948 760 892 839C831 926 705 947 600 909C567 897 559 865 574 838Z\"/><path fill-rule=\"evenodd\" d=\"M234 82C238 69 250 70 261 80L365 169C422 150 502 150 560 170L667 80C679 70 691 73 694 88L724 266C751 311 754 355 735 396C717 436 680 462 635 478C659 532 690 597 706 664C723 731 724 794 705 850C695 883 673 910 635 918C594 928 546 925 515 921C484 925 438 928 397 919C363 924 321 924 287 913C238 897 219 859 225 808C232 742 259 686 286 634C311 584 325 532 328 480C267 465 220 437 198 393C179 354 184 307 207 266ZM339 311C319 311 304 328 304 350C304 372 319 389 339 389C359 389 374 372 374 350C374 328 359 311 339 311ZM587 311C567 311 552 328 552 350C552 372 567 389 587 389C607 389 622 372 622 350C622 328 607 311 587 311Z\"/></g>","car":"<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M94 326H264Q278 326 278 340V382Q278 396 264 396H224V475L257 483Q294 472 328 488L390 417Q400 405 416 405H449Q461 405 465 417L485 475H540Q554 475 564 485L588 509L850 552V526Q850 512 864 512H923Q938 512 938 527V635Q938 650 923 650H851Q825 704 766 704Q707 704 679 650H377Q347 714 278 714Q209 714 179 650H96Q82 650 82 636V608Q82 594 96 594H157Q157 529 198 497V396H94Q80 396 80 382V340Q80 326 94 326ZM278 558A42 42 0 1 0 278 642A42 42 0 1 0 278 558ZM766 561A39 39 0 1 0 766 639A39 39 0 1 0 766 561Z\"/>","candle":"<g fill=\"currentColor\"><path d=\"M720 214C694 195 690 168 705 145C717 127 741 119 754 105C765 93 765 80 758 69C783 73 801 91 800 112C799 141 771 155 752 167C737 177 737 188 747 199C759 213 736 226 720 214Z\"/><path fill-rule=\"evenodd\" d=\"M94 540L478 248Q511 222 544 248L665 342V274Q665 254 685 254H755Q775 254 775 274V427L930 548Q956 568 942 592Q935 606 914 606H839V895Q839 929 805 929H485V727C485 679 462 652 424 652C386 652 363 679 363 727V929H219Q185 929 185 895V606H111Q87 606 79 584Q70 558 94 540ZM614 628Q594 628 594 648V754Q594 774 614 774H720Q740 774 740 754V648Q740 628 720 628Z\"/></g>","bin":"<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M145 211 637 86Q654 82 670 90L832 166Q850 174 850 194V223H865Q903 223 903 261V340Q903 367 876 367H823L777 772Q828 794 841 847C856 906 813 953 757 953Q706 953 680 909L362 866Q335 862 330 832L247 338 149 291Q129 282 129 261V235Q129 216 145 211ZM807 270 795 319H855V270ZM208 259 279 292 770 225 722 202ZM758 827A38 38 0 1 0 758 903 38 38 0 1 0 758 827Z\"/>","sun":"<g fill=\"currentColor\"><circle cx=\"512\" cy=\"512\" r=\"222\"/><rect x=\"464\" y=\"77\" width=\"96\" height=\"160\" rx=\"48\"/><rect x=\"464\" y=\"787\" width=\"96\" height=\"160\" rx=\"48\"/><rect x=\"77\" y=\"464\" width=\"160\" height=\"96\" rx=\"48\"/><rect x=\"787\" y=\"464\" width=\"160\" height=\"96\" rx=\"48\"/><rect x=\"464\" y=\"77\" width=\"96\" height=\"160\" rx=\"48\" transform=\"rotate(45 512 512)\"/><rect x=\"464\" y=\"77\" width=\"96\" height=\"160\" rx=\"48\" transform=\"rotate(135 512 512)\"/><rect x=\"464\" y=\"77\" width=\"96\" height=\"160\" rx=\"48\" transform=\"rotate(225 512 512)\"/><rect x=\"464\" y=\"77\" width=\"96\" height=\"160\" rx=\"48\" transform=\"rotate(315 512 512)\"/></g>","moon":"<g fill=\"currentColor\"><path d=\"M552 81C288 67 80 264 80 510C80 751 275 944 516 944C679 944 825 853 897 715C905 699 888 683 873 692C817 725 757 741 693 741C504 741 351 588 351 399C351 281 412 173 558 107C574 100 570 82 552 81Z\"/><path d=\"M781 179C785 165 801 165 805 179L828 250C832 263 841 272 854 276L925 299C939 303 939 319 925 323L854 346C841 350 832 359 828 372L805 443C801 457 785 457 781 443L758 372C754 359 745 350 732 346L661 323C647 319 647 303 661 299L732 276C745 272 754 263 758 250Z\"/></g>","cloud":"<path fill=\"currentColor\" d=\"M256 768C157 768 77 688 77 589C77 490 157 410 256 410C272 410 288 412 303 416C319 310 408 232 516 232C633 232 729 324 734 440C747 437 761 435 775 435C870 435 947 509 947 602C947 694 873 768 781 768Z\"/>","rain":"<g fill=\"currentColor\"><path d=\"M253 607C155 607 76 530 76 435C76 345 144 271 232 262C260 157 353 85 462 85C579 85 678 166 702 276C723 267 747 262 771 262C869 262 948 339 948 435C948 530 869 607 771 607Z\"/><path d=\"M288 665C279 665 273 674 261 691C239 723 208 764 208 795C208 839 244 873 288 873C332 873 368 839 368 795C368 764 337 723 315 691C303 674 297 665 288 665Z\"/><path d=\"M512 731C503 731 497 740 485 757C463 789 432 830 432 861C432 905 468 939 512 939C556 939 592 905 592 861C592 830 561 789 539 757C527 740 521 731 512 731Z\"/><path d=\"M736 665C727 665 721 674 709 691C687 723 656 764 656 795C656 839 692 873 736 873C780 873 816 839 816 795C816 764 785 723 763 691C751 674 745 665 736 665Z\"/></g>","snow":"<g fill=\"currentColor\"><path d=\"M260 606C159 606 78 532 78 437C78 347 145 276 234 267C261 174 343 110 441 110C550 110 641 186 660 289C686 272 716 263 748 263C816 263 872 307 889 368C924 393 946 432 946 477C946 549 888 606 816 606Z\"/><g transform=\"translate(294 746)\"><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\"/><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\" transform=\"rotate(60)\"/><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\" transform=\"rotate(120)\"/></g><g transform=\"translate(512 842)\"><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\"/><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\" transform=\"rotate(60)\"/><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\" transform=\"rotate(120)\"/></g><g transform=\"translate(730 746)\"><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\"/><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\" transform=\"rotate(60)\"/><rect x=\"-18\" y=\"-72\" width=\"36\" height=\"144\" rx=\"18\" transform=\"rotate(120)\"/></g></g>","fog":"<g fill=\"currentColor\"><path d=\"M252 566C155 566 77 493 77 402C77 313 147 241 236 237C266 147 350 85 449 85C565 85 663 169 681 279C706 266 734 259 764 259C865 259 947 328 947 417C947 501 876 566 783 566Z\"/><rect x=\"119\" y=\"639\" width=\"786\" height=\"114\" rx=\"57\"/><rect x=\"177\" y=\"826\" width=\"670\" height=\"114\" rx=\"57\"/></g>","storm":"<g fill=\"currentColor\"><path d=\"M250 568C150 568 76 501 76 410C76 328 135 263 214 252C227 154 310 80 410 80C501 80 579 141 603 224C625 211 651 204 678 204C751 204 812 254 827 322C897 329 948 379 948 444C948 515 892 568 820 568Z\"/><path d=\"M460 624H624Q643 624 633 642L558 760H668Q692 760 675 779L469 938Q447 955 454 927L491 816H387Q368 816 377 798L440 637Q445 624 460 624Z\"/></g>","frost":"<g fill=\"currentColor\"><path d=\"M468 512V334L346 264Q318 248 334 220Q350 192 378 208L468 260V121A44 44 0 0 1 556 121V260L646 208Q674 192 690 220Q706 248 678 264L556 334V512Z\"/><path transform=\"rotate(60 512 512)\" d=\"M468 512V334L346 264Q318 248 334 220Q350 192 378 208L468 260V121A44 44 0 0 1 556 121V260L646 208Q674 192 690 220Q706 248 678 264L556 334V512Z\"/><path transform=\"rotate(120 512 512)\" d=\"M468 512V334L346 264Q318 248 334 220Q350 192 378 208L468 260V121A44 44 0 0 1 556 121V260L646 208Q674 192 690 220Q706 248 678 264L556 334V512Z\"/><path transform=\"rotate(180 512 512)\" d=\"M468 512V334L346 264Q318 248 334 220Q350 192 378 208L468 260V121A44 44 0 0 1 556 121V260L646 208Q674 192 690 220Q706 248 678 264L556 334V512Z\"/><path transform=\"rotate(240 512 512)\" d=\"M468 512V334L346 264Q318 248 334 220Q350 192 378 208L468 260V121A44 44 0 0 1 556 121V260L646 208Q674 192 690 220Q706 248 678 264L556 334V512Z\"/><path transform=\"rotate(300 512 512)\" d=\"M468 512V334L346 264Q318 248 334 220Q350 192 378 208L468 260V121A44 44 0 0 1 556 121V260L646 208Q674 192 690 220Q706 248 678 264L556 334V512Z\"/></g>","bus":"<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M260 77H764Q884 77 884 197V799Q884 852 832 865V915Q832 947 800 947H736Q704 947 704 915V869H320V915Q320 947 288 947H224Q192 947 192 915V865Q140 852 140 799V197Q140 77 260 77ZM294 141Q270 141 270 165V193Q270 217 294 217H730Q754 217 754 193V165Q754 141 730 141ZM232 269Q204 269 204 297V566Q204 594 232 594H792Q820 594 820 566V297Q820 269 792 269ZM264 683A48 48 0 1 0 264 779A48 48 0 1 0 264 683ZM760 683A48 48 0 1 0 760 779A48 48 0 1 0 760 683Z\"/>","fuel":"<g fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M226 78H550Q622 78 622 150V858H658Q690 858 690 890V914Q690 946 658 946H110Q78 946 78 914V890Q78 858 110 858H146V158Q146 78 226 78ZM250 182Q234 182 234 198V366Q234 382 250 382H518Q534 382 534 366V198Q534 182 518 182Z\"/><path d=\"M600 438H654Q762 438 762 546V724Q762 772 810 772Q858 772 858 724V410H837Q813 410 813 386V310L733 230Q711 208 733 186L747 172Q769 150 791 172L925 306Q946 327 946 357V724Q946 860 810 860Q674 860 674 724V546Q674 526 654 526H600Z\"/></g>","alert":"<path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M455 126C480 83 544 83 569 126L939 789C965 835 932 891 879 891H145C92 891 59 835 85 789ZM483 349C471 349 461 359 462 371L474 608C475 621 484 630 497 630H527C540 630 549 621 550 608L562 371C563 359 553 349 541 349ZM512 681A53 53 0 1 0 512 787A53 53 0 1 0 512 681Z\"/>"};
+
+// The racing car is wide and flat, so zoom it in to fill its badge.
+var HFVIEW = { car: '80 91 858 858' };
+
+var ICONS = {
+  cat: 'M5 20v-8L4 5l4.5 3h7L20 5l-1 7v8zM9.5 13v.5M14.5 13v.5M10.5 16.5h3',
+  car: 'M2 15h3l3-4h5l1 2h6l2 2M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0M15 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0M9 15h6M20 11v4',
+  candle: 'M12 3c1.5 2 1.5 3 0 4.5C10.5 6 10.5 5 12 3zM9 10h6v11H9z',
+  bin: 'M5 7h14M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6',
+  sun: 'M12 7a5 5 0 1 0 0 10a5 5 0 1 0 0-10M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
+  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+  train: 'M7 3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3zM4 11h16M8 15h.01M16 15h.01M8 18l-2 3M16 18l2 3',
+  cloud: 'M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z',
+  rain: 'M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 15zM9 18l-1 2M13 18l-1 2M17 18l-1 2',
+  snow: 'M7 14h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14zM9 18h.01M13 18h.01M17 18h.01M11 21h.01M15 21h.01',
+  fog: 'M7 12h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 12zM4 16h16M6 20h12',
+  storm: 'M7 15h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 15zM13 15l-2 4h3l-2 4',
+  frost: 'M12 3v18M4.5 7.5l15 9M19.5 7.5l-15 9M10 4l2 2 2-2M10 20l2-2 2 2',
+  bus: 'M5 17V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11zM5 12h14M8 17v2M16 17v2M8 14.5h.01M16 14.5h.01',
+  fuel: 'M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16zM3 21h12M6 9h6M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3',
+  alert: 'M12 3l10 18H2zM12 10v5M12 18h.01'
+};
+
+function svg(name, color, size, sw) {
+  if (HFICONS[name]) return '<svg width="' + (size || 24) + '" height="' + (size || 24) + '" viewBox="' + (HFVIEW[name] || '0 0 1024 1024') + '" style="color: ' + color +
+    '; display: block; flex: none" aria-hidden="true">' + HFICONS[name] + '</svg>';
+  return '<svg width="' + (size || 24) + '" height="' + (size || 24) + '" viewBox="0 0 24 24" fill="none" stroke="' + color +
+    '" stroke-width="' + (sw || 1.8) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + ICONS[name] + '"></path></svg>';
+}
+function art(name, color, size, sw) {
+  if (ART[name]) return '<img src="' + ART[name] + '" width="' + (size || 24) + '" height="' + (size || 24) +
+    '" alt="" style="display: block; object-fit: contain" onerror="this.outerHTML=svgFallback(\'' + name + '\',\'' + color + '\',' + (size || 24) + ')">';
+  return svg(name, color, size, sw);
+}
+function svgFallback(n, c, s) { return svg(n, c, s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function $(id) { return document.getElementById(id); }
+
+// ------------------------------------------------------------ time helpers (London)
+function parts(ms) {
+  var f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: 'numeric', month: 'long',
+    year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: false });
+  var o = {};
+  f.formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; });
+  o.h = Number(o.hour) % 24; o.m = Number(o.minute);
+  return o;
+}
+function dayKey(ms) { var p = parts(ms); return p.year + '-' + p.month + '-' + p.day; }
+function isoKey(ms) { return new Date(ms).toLocaleDateString('en-CA', { timeZone: 'Europe/London' }); }
+function hm(ms) { var p = parts(ms); return p.h + ':' + (p.m < 10 ? '0' : '') + p.m; }
+function short(ms) {
+  return new Date(ms).toLocaleString('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '');
+}
+function minutesOfDay(ms) { var p = parts(ms); return p.h * 60 + p.m; }
+
+// ------------------------------------------------------------ state
+var DATA = null, BATTERY = '';
+
+function weatherIcon(w) {
+  var c = w.code;
+  if (c >= 95) return 'storm';
+  if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow';
+  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) return 'rain';
+  if (c === 45 || c === 48) return 'fog';
+  if (w.temp <= 0 && c <= 3) return 'frost';
+  if (c <= 1) return w.isDay ? 'sun' : 'moon';
+  return 'cloud';
+}
+function weatherWord(w) {
+  var c = w.code;
+  if (c >= 95) return 'Thunderstorms';
+  if (c >= 71 && c <= 77 || c === 85 || c === 86) return 'Snow';
+  if (c >= 80 && c <= 82) return 'Showers';
+  if (c >= 61 && c <= 67) return 'Rain';
+  if (c >= 51 && c <= 57) return 'Drizzle';
+  if (c === 45 || c === 48) return 'Fog';
+  if (w.temp <= 0) return 'Frost';
+  if (c === 0) return 'Clear';
+  if (c <= 2) return 'Partly cloudy';
+  return 'Cloudy';
+}
+function person(key) { return (DATA && DATA.people && DATA.people[key]) || { name: key, color: '#7A5C12', tint: '#EFE4C6', icon: 'candle' }; }
+
+// ------------------------------------------------------------ render
+function parchBg() {
+  if (!ART.parchment) return;
+  var parch = document.querySelectorAll('.parch');
+  for (var i = 0; i < parch.length; i++) parch[i].style.backgroundImage = 'url(' + ART.parchment + ')';
+}
+function render() {
+  var now = Date.now();
+  var mins = minutesOfDay(now);
+  var night = mins >= NIGHT_FROM || mins < NIGHT_TO;
+  $('day').className = night ? 'hidden' : '';
+  $('night').className = night ? '' : 'hidden';
+  var p = parts(now);
+  if (night) { renderNight(now, p); return; }
+
+  $('date').textContent = (p.weekday + ' · ' + p.day + ' ' + p.month).toUpperCase();
+  $('clock').textContent = hm(now);
+  $('battery').textContent = BATTERY;
+  if (!DATA) return;
+
+  // Sections switched off in Config.gs
+  var show = DATA.show || {};
+  $('bus').style.display = show.bus === false ? 'none' : 'flex';
+  $('diesel').style.display = show.fuel === false ? 'none' : 'flex';
+  $('bus').style.flex = show.fuel === false ? '1' : '';
+  $('transport').style.display = show.transport ? 'flex' : 'none';
+  $('f1').style.display = show.f1 === false ? 'none' : '';
+
+  // Weather
+  $('weather').innerHTML = (DATA.weather || []).map(function (w) {
+    return '<div class="box row" style="gap: 12px; padding: 10px 14px">' + svg(weatherIcon(w), '#F3E9D2', 38, 1.5) +
+      '<div style="display: flex; flex-direction: column; min-width: 0">' +
+      '<span class="cz" style="font-size: 12px; letter-spacing: .2em; color: #C9B37E">' + esc(w.place) + '</span>' +
+      '<span class="cz" style="font-size: 25px; line-height: 1.1">' + w.temp + '°</span>' +
+      '<span class="muted" style="font-size: 15px">' + weatherWord(w) + ' · ' + w.max + '° / ' + w.min + '°</span></div></div>';
+  }).join('');
+
+  renderDrive(now);
+  renderBins(now, mins);
+  renderToday(now, mins);
+  renderF1(now);
+  renderWeek(now);
+  renderBus(now);
+  renderDiesel();
+  if (show.transport) renderTransport(now);
+  parchBg();
+}
+
+function renderDrive(now) {
+  var d = DATA.drive, el = $('drive');
+  if (!d || d.off || d.liveMin == null) { el.innerHTML = ''; return; }
+  var alert = !!d.change;
+  var morning = d.which === 'morning';
+  var roads = morning ? 'M4 · A419 · A420' : 'A420 · A419 · M4';
+  var sub = alert ? (d.change.reason + ' · via ' + d.change.via) :
+    ('via ' + roads + (d.delayMin > 1 ? ' · ' + d.delayMin + ' min slower than usual' : ' · normal traffic'));
+  var note = [];
+  if (d.frost != null) note.push('Frost ' + d.frost + '°: scrape the car (+5 min)');
+  if (d.sentAt) note.push('new route sent to ' + person('commuter').name + '’s phone ' + d.sentAt);
+  el.innerHTML =
+    '<div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; border-radius: 12px; ' +
+      (alert ? 'border: 2px solid #D9574C; background: #2A1B2A' : 'border: 1px solid #4A4466') + '">' +
+    '<div class="row" style="gap: 14px">' +
+      '<span class="badge" style="background: #F3DDE7">' + svg('cat', '#B03A6F', 24) + '</span>' +
+      '<div class="grow" style="display: flex; flex-direction: column">' +
+        '<span style="font-size: 19px; font-weight: 500">' + esc(d.title) + (alert ? ' · new route' : '') + '</span>' +
+        '<span style="font-size: 15px; color: ' + (alert ? '#F2B3AC' : '#A9A2C6') + '">' + esc(sub) + '</span></div>' +
+      '<div style="display: flex; flex-direction: column; align-items: flex-end; flex: none">' +
+        '<span class="cz" style="font-size: 28px; line-height: 1">' + d.liveMin + ' min</span>' +
+        (d.leaveBy ? '<span style="font-size: 15px; color: ' + (alert ? '#F2B3AC' : '#E0A84A') + '">Leave by ' + esc(d.leaveBy) + '</span>' : '') +
+      '</div></div>' +
+    (note.length ? '<div class="row" style="gap: 8px; padding-top: 8px; border-top: 1px solid #4A4466; font-size: 15px; color: #DCD6F0">' +
+      svg('frost', '#9FC7E8', 16) + '<span>' + esc(note.join(' · ')) + '</span></div>' : '') +
+    '</div>';
+}
+
+function renderBins(now, mins) {
+  var b = DATA.bins, el = $('binsTonight');
+  if (!b || !b.tonight || mins < 17 * 60) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="row" style="gap: 14px; padding: 14px 16px; border: 2px solid #C9A44C; border-radius: 12px">' +
+    '<span class="badge" style="background: #EFE4C6">' + svg('bin', '#7A5C12', 24) + '</span>' +
+    '<div class="grow" style="display: flex; flex-direction: column">' +
+      '<span class="cz" style="font-size: 13px; letter-spacing: .22em; color: #C9B37E">BINS OUT TONIGHT</span>' +
+      '<span style="font-size: 21px; font-weight: 500">' + esc(b.tonight.label) + '</span></div>' +
+    '<span class="muted" style="font-size: 15px">collected tomorrow</span></div>';
+}
+
+function evRow(title, who, time, color, tint, icon) {
+  return '<div class="ev parch"><span class="badge" style="background: ' + tint + '">' + svg(icon, color, 24) + '</span>' +
+    '<div class="grow" style="display: flex; flex-direction: column"><span class="t">' + esc(title) + '</span>' +
+    '<span class="w">' + esc(who) + '</span></div><span class="time">' + esc(time) + '</span></div>';
+}
+
+function renderToday(now, mins) {
+  var evening = mins >= 17 * 60;
+  $('todayLabel').textContent = evening ? 'THIS EVENING' : 'TODAY';
+  var today = dayKey(now), rows = [];
+  if (DATA.bins && DATA.bins.today && mins < 12 * 60) {
+    rows.push(evRow(DATA.bins.today.label, 'Bins', 'Today', '#7A5C12', '#EFE4C6', 'bin'));
+  }
+  if (DATA.bins && DATA.bins.tomorrow && mins < 17 * 60) {
+    rows.push(evRow(DATA.bins.tomorrow.label + ' out', 'Bins', 'Tonight', '#7A5C12', '#EFE4C6', 'bin'));
+  }
+  var evs = (DATA.calendar && DATA.calendar.events) || [];
+  evs.filter(function (e) { return dayKey(e.start) === today && (e.allDay || e.end > now); })
+     .slice(0, 4).forEach(function (e) {
+       var pp = person(e.who);
+       rows.push(evRow(e.title, pp.name, e.allDay ? 'All day' : hm(e.start), pp.color, pp.tint, pp.icon));
+     });
+  var tea = (DATA.dinners || {})[isoKey(now)];
+  if (tea && mins < 21 * 60) rows.push(evRow(tea, 'Tonight\'s dinner', 'Tea', '#8A6A3A', '#EFE4C6', 'dinner'));
+  if (!rows.length) rows.push('<div class="muted" style="font-size: 19px; font-style: italic; padding: 6px 2px">Nothing else planned today</div>');
+  $('today').innerHTML = rows.slice(0, 4).join('');
+}
+
+function renderF1(now) {
+  var f = DATA.f1, el = $('f1');
+  if (!f) { el.innerHTML = ''; return; }
+  var ms = f.race - now, count;
+  if (ms <= 0) count = 'Race on';
+  else {
+    var d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 3600e3), m = Math.floor(ms % 3600e3 / 60e3);
+    count = d > 0 ? d + 'd ' + h + 'h' : h + 'h ' + m + 'm';
+  }
+  var line = (f.sprint ? 'Sprint ' + short(f.sprint) + ' · ' : '') +
+             (f.qualifying ? 'Qualifying ' + short(f.qualifying) + ' · ' : '') + 'Race ' + short(f.race) + ' (UK)';
+  el.innerHTML = '<div class="box row" style="gap: 14px; padding: 10px 18px; border-radius: 14px">' +
+    '<span class="badge" style="width: 38px; height: 38px; background: #DCEBDF">' + svg('car', '#2E7D4F', 24) + '</span>' +
+    '<div class="grow" style="display: flex; flex-direction: column">' +
+      '<span class="cz" style="font-size: 15px; letter-spacing: .12em">' + esc(f.name.toUpperCase()) + '</span>' +
+      '<span class="muted" style="font-size: 15px">' + esc(line) + '</span></div>' +
+    '<div style="display: flex; flex-direction: column; align-items: flex-end">' +
+      '<span class="cz" style="font-size: 24px; line-height: 1">' + count + '</span>' +
+      '<span class="muted" style="font-size: 13px">to lights out</span></div></div>';
+}
+
+function renderWeek(now) {
+  var evs = (DATA.calendar && DATA.calendar.events) || [];
+  var dinners = DATA.dinners || {};
+  var html = '', first = null, last = null;
+  for (var i = 1; i <= 6; i++) {
+    var ms = now + i * 864e5, key = dayKey(ms), p = parts(ms);
+    if (!first) first = p; last = p;
+    var chips = evs.filter(function (e) { return dayKey(e.start) === key || (e.allDay && e.start <= ms && e.end > ms); })
+      .slice(0, 4).map(function (e) {
+        var pp = person(e.who);
+        return '<span class="chip" style="background: ' + pp.tint + '">' + svg(pp.icon, pp.color, 18, 2) +
+          '<span class="ct">' + (e.allDay ? 'All day' : hm(e.start)) + '</span><span class="cn">' + esc(e.title) + '</span></span>';
+      }).join('');
+    html += '<div class="wk"><div class="d"><span class="dow">' + p.weekday.slice(0, 3).toUpperCase() +
+      '</span><span class="num">' + p.day + '</span></div><div style="min-width: 0">' + chips + '</div>' +
+      (dinners[isoKey(ms)] ? '<span class="dn">' + svg('dinner', '#8A6A3A', 18) + '<span style="overflow: hidden; text-overflow: ellipsis">' + esc(dinners[isoKey(ms)]) + '</span></span>' : '') +
+      '</div>';
+  }
+  $('week').innerHTML = html;
+  $('weekRange').textContent = first.day + ' – ' + last.day + ' ' + last.month;
+  var ppl = ['owner', 'commuter', 'family'];
+  $('legend').innerHTML = ppl.filter(function (k) { return person(k).name; }).map(function (k) {
+    var pp = person(k);
+    return '<span class="row" style="gap: 6px">' + svg(pp.icon, pp.color, 18, 2) + esc(pp.name) + '</span>';
+  }).join('');
+  var n = DATA.notices || [];
+  $('notices').textContent = n.length ? 'Notices: ' + n.slice(0, 3).join(' · ') : '';
+}
+
+function renderBus(now) {
+  var b = DATA.bus, head = '<div class="row" style="gap: 8px">' + svg('bus', '#C9B37E', 20, 1.6) +
+    '<span class="cz" style="font-size: 12px; letter-spacing: .2em; color: #C9B37E">NEXT BUS</span></div>';
+  var body;
+  if (!b) body = '<span class="muted">Bus times unavailable</span>';
+  else if (b.missingKey) body = '<span class="muted" style="font-size: 16px">Add your TransportAPI keys and bus stop to show the next bus</span>';
+  else {
+    var next = (b.departures || []).filter(function (d) { return d.time > now - 30000; })[0];
+    if (!next) body = '<span class="muted" style="font-size: 16px">No more buses listed today</span>';
+    else {
+      var wait = Math.round((next.time - now) / 60000);
+      body = '<div class="row" style="align-items: baseline; gap: 10px"><span class="cz" style="font-size: 34px; line-height: 1">' +
+        hm(next.time) + '</span><span style="font-size: 17px; color: #E0A84A">' + (wait <= 1 ? 'due' : 'in ' + wait + ' min') + '</span></div>' +
+        '<span style="font-size: 16px">Bus ' + esc(next.line) + ' to ' + esc(next.destination || 'Town') + '</span>' +
+        '<span class="muted" style="font-size: 14px">' + (DATA.busStop ? 'from ' + esc(DATA.busStop) + ' · ' : '') + (next.live ? 'live' : 'timetable') + '</span>';
+    }
+  }
+  $('bus').innerHTML = head + body;
+}
+
+function renderTransport(now) {
+  var t = DATA.transport, el = $('transport');
+  var head = function (icon, text) { return '<div class="row" style="gap: 7px; margin-bottom: 4px">' + svg(icon, '#C9B37E', 18, 1.6) +
+    '<span class="cz" style="font-size: 11px; letter-spacing: .18em; color: #C9B37E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">' + esc(text) + '</span></div>'; };
+  var line = function (left, mid, right, rightColor) {
+    return '<div class="row" style="gap: 8px; align-items: baseline; font-size: 17px; line-height: 1.35">' + left +
+      '<span class="grow" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">' + mid + '</span>' +
+      '<span style="flex: none; color: ' + (rightColor || '#F3E9D2') + '">' + right + '</span></div>'; };
+  var mins = function (ms) { var w = Math.round((ms - now) / 60000); return w <= 0 ? 'due' : w + ' min'; };
+  if (!t) { el.innerHTML = '<span class="muted">Live travel unavailable</span>'; return; }
+  var cols = [];
+  // Trains
+  var rail = (t.rail || []).filter(function (d) { return d.expected > now - 30000; }).slice(0, 3);
+  var dests = rail.map(function (d) { return d.destination; });
+  var oneDest = dests.length && dests.every(function (x) { return x === dests[0]; }) ? dests[0].replace('Liverpool Street', 'Liverpool St') : '';
+  var r = head('train', oneDest ? 'TRAINS TO ' + oneDest.toUpperCase() : 'TRAINS · ' + String(t.railName || '').toUpperCase());
+  if (!t.rail) r += '<span class="muted" style="font-size: 16px">Train times unavailable</span>';
+  else if (!rail.length) r += '<span class="muted" style="font-size: 16px">No more trains listed</span>';
+  rail.forEach(function (d) {
+    var st, col;
+    if (d.status === 'Cancelled') { st = 'Cancelled'; col = '#E8907F'; }
+    else if (d.delayMin >= 1 || d.status === 'Delayed') { st = d.delayMin >= 1 ? 'Exp ' + hm(d.expected) : 'Delayed'; col = '#E0A84A'; }
+    else { st = mins(d.expected); col = '#9FD3A8'; }
+    r += line('<span class="cz" style="font-size: 17px; flex: none' + (d.status === 'Cancelled' ? '; text-decoration: line-through; opacity: .7' : '') + '">' + hm(d.scheduled) + '</span>',
+      '<span class="muted" style="font-size: 15px">' + (oneDest ? '' : esc(d.destination) + ' · ') + (d.platform ? 'Platform ' + esc(d.platform) : '') + '</span>', st, col);
+  });
+  if (t.line) r += '<div style="font-size: 14px; margin-top: 3px; color: ' + (t.line.good ? '#A9A2C6' : '#E0A84A') + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">' +
+    esc(t.line.name + ' line: ' + t.line.status) + '</div>';
+  cols.push(r);
+  // Buses
+  (t.buses || []).forEach(function (b) {
+    var list = (b.departures || []).filter(function (d) { return d.time > now - 30000; }).slice(0, 3);
+    var c = head('bus', b.name.toUpperCase());
+    if (!list.length) c += '<span class="muted" style="font-size: 16px">No buses listed</span>';
+    list.forEach(function (d) {
+      c += line('<span class="cz" style="flex: none; min-width: 34px; font-size: 15px; font-weight: 700; color: #1C1A2E; background: #C9B37E; border-radius: 5px; padding: 0 5px; text-align: center">' + esc(d.line) + '</span>',
+        '<span class="muted" style="font-size: 15px">' + esc(d.destination) + '</span>', mins(d.time), '#F3E9D2');
+    });
+    cols.push(c);
+  });
+  var html = '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px">' +
+    cols.map(function (c, i) { return '<div style="min-width: 0' + (i ? '; border-left: 1px solid #4A4466; padding-left: 16px' : '') + '">' + c + '</div>'; }).join('') + '</div>';
+  if (t.line && !t.line.good && t.line.reason) html += '<div class="row" style="gap: 8px; margin-top: 8px; padding-top: 7px; border-top: 1px solid #4A4466; font-size: 15px; color: #E0A84A">' +
+    svg('alert', '#E0A84A', 16) + '<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">' + esc(t.line.reason) + '</span></div>';
+  el.innerHTML = html;
+}
+
+function renderDiesel() {
+  var f = DATA.diesel, head = '<div class="row" style="gap: 8px">' + svg('fuel', '#C9B37E', 20, 1.6) +
+    '<span class="cz" style="font-size: 12px; letter-spacing: .2em; color: #C9B37E">CHEAPEST ' + esc(String(DATA.fuelLabel || 'Diesel').toUpperCase()) + ' NEARBY</span></div>';
+  var body;
+  if (!f) body = '<span class="muted">Fuel prices unavailable</span>';
+  else if (f.missingKey) body = '<span class="muted" style="font-size: 16px">Add your Fuel Finder keys to show fuel prices</span>';
+  else body = (f.stations || []).map(function (s, i) {
+    return '<div class="row" style="gap: 12px; align-items: baseline; font-size: 17px">' +
+      '<span class="cz" style="font-size: 13px; color: #C9B37E; width: 14px">' + (i + 1) + '</span>' +
+      '<span class="grow" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">' + esc(s.name) + (s.area ? ' · ' + esc(s.area) : '') + '</span>' +
+      '<span class="muted" style="font-size: 14px">' + s.miles + ' mi</span>' +
+      '<span class="cz" style="font-size: 20px; width: 78px; text-align: right">' + s.price.toFixed(1) + 'p</span></div>';
+  }).join('');
+  $('diesel').innerHTML = head + body;
+}
+
+// ------------------------------------------------------------ night mode
+var starsMade = false;
+function makeStars() {
+  if (starsMade) return; starsMade = true;
+  var seed = 7, html = '';
+  function rnd() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  for (var i = 0; i < 90; i++) {
+    var x = Math.round(rnd() * 1270), y = Math.round(rnd() * 790);
+    if (y > 160 && y < 520 && x > 280 && x < 1000) continue;
+    var size = rnd() > .85 ? 3 : (rnd() > .5 ? 2 : 1), warm = rnd() > .88;
+    html += '<span class="star" style="left:' + x + 'px;top:' + y + 'px;width:' + size + 'px;height:' + size +
+      'px;background:' + (warm ? '#C9A44C' : '#DCD6F0') + ';animation-delay:' + (rnd() * 6).toFixed(1) + 's"></span>';
+  }
+  $('stars').innerHTML = html;
+}
+function moonPhase(ms) {
+  var lunation = 29.530588853, known = Date.UTC(2000, 0, 6, 18, 14);
+  var age = (((ms - known) / 864e5) % lunation + lunation) % lunation;
+  var names = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
+  return names[Math.floor((age / lunation) * 8 + .5) % 8];
+}
+function renderNight(now, p) {
+  makeStars();
+  $('nDate').textContent = (p.weekday + ' · ' + p.day + ' ' + p.month).toUpperCase();
+  $('nClock').textContent = hm(now);
+  $('nMoon').innerHTML = svg('moon', '#8C86B0', 20, 1.6) + '<span>' + moonPhase(now) + '</span>';
+  $('nBattery').textContent = BATTERY ? BATTERY + ' · wakes at ' + WAKE_AT : 'Wakes at ' + WAKE_AT;
+  var info = [];
+  if (DATA && DATA.bins && (DATA.bins.tonight || (minutesOfDay(now) < NIGHT_TO && DATA.bins.today))) {
+    var b = DATA.bins.tonight || DATA.bins.today;
+    info.push(svg('bin', '#A9A2C6', 18) + '<span>Bins out tonight: ' + esc(b.label.toLowerCase()) + '</span>');
+  }
+  if (DATA && DATA.weather && DATA.weather[0]) {
+    var low = nextMorningLow(DATA.weather[0], now);
+    if (low != null && low <= 3) info.push(svg('frost', '#A9A2C6', 18) + '<span>Frost likely by morning (' + Math.round(low) + '°)</span>');
+  }
+  if (DATA && DATA.calendar) {
+    var tomorrow = dayKey(now + (minutesOfDay(now) >= NIGHT_FROM ? 864e5 : 0));
+    var first = (DATA.calendar.events || []).filter(function (e) { return dayKey(e.start) === tomorrow && !e.allDay; })[0];
+    if (first) info.push('<span>Tomorrow: ' + esc(first.title) + ' ' + hm(first.start) + '</span>');
+  }
+  $('nInfo').innerHTML = info.map(function (h) { return '<span class="row" style="gap: 8px">' + h + '</span>'; }).join('');
+  $('nInfo').style.display = info.length ? 'flex' : 'none';
+}
+function nextMorningLow(w, now) {
+  var target = dayKey(now + (minutesOfDay(now) >= NIGHT_FROM ? 864e5 : 0));
+  var low = null, h = w.hourly || { time: [], temp: [] };
+  for (var i = 0; i < h.time.length; i++) {
+    if (h.time[i].indexOf(target) === 0) {
+      var hr = Number(h.time[i].substr(11, 2));
+      if (hr >= 6 && hr <= 8 && (low === null || h.temp[i] < low)) low = h.temp[i];
+    }
+  }
+  return low;
+}
+
+// ------------------------------------------------------------ data + loop
+function load() {
+  if (window.google && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(function (d) { DATA = d; render(); })
+      .withFailureHandler(function () { /* keep showing the last data; try again next round */ })
+      .getBoardData(BOARD_KEY);
+  } else if (API_URL) {
+    fetch(API_URL + '?api=1&k=' + encodeURIComponent(BOARD_KEY))
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && !d.error) { DATA = d; render(); } })
+      .catch(function () { /* keep the last data; try again next round */ });
+  } else if (window.SAMPLE_DATA) {
+    DATA = window.SAMPLE_DATA; render();
+  }
+}
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
+  $('stage').style.transform = 'scale(' + s + ')';
+  $('stage').style.left = Math.round((window.innerWidth - 1280 * s) / 2) + 'px';
+  $('stage').style.top = Math.round((window.innerHeight - 800 * s) / 2) + 'px';
+}
+function battery() {
+  if (!navigator.getBattery) return;
+  navigator.getBattery().then(function (b) {
+    function upd() { BATTERY = 'Battery ' + Math.round(b.level * 100) + '%' + (b.charging ? ' · charging' : ' · resting'); }
+    upd(); b.addEventListener('levelchange', upd); b.addEventListener('chargingchange', upd);
+  }, function () {});
+}
+function applyArt() {
+  if (ART.dayBg) $('day').style.background = 'linear-gradient(rgba(28,26,46,.55), rgba(28,26,46,.55)), url(' + ART.dayBg + ') center / cover';
+  if (ART.nightSky) $('night').style.background = '#0E0C1C url(' + ART.nightSky + ') center / cover';
+  var parch = document.querySelectorAll('.parch');
+  for (var i = 0; i < parch.length; i++) if (ART.parchment) parch[i].style.background = '#F1E6CC url(' + ART.parchment + ') center / cover';
+  if (ART.corner) {
+    var wk = $('weekPanel');
+    wk.insertAdjacentHTML('beforeend', '<img src="' + ART.corner + '" alt="" style="position: absolute; left: 6px; top: 6px; width: 64px; opacity: .85; pointer-events: none">' +
+      '<img src="' + ART.corner + '" alt="" style="position: absolute; right: 6px; bottom: 6px; width: 64px; opacity: .85; transform: rotate(180deg); pointer-events: none">');
+  }
+}
+window.addEventListener('resize', fit);
+fit(); battery(); render(); applyArt(); load();
+setInterval(render, 15000);
+setInterval(load, REFRESH_MS);
+// Reload the whole page once a night to clear memory on the old tablet.
+setInterval(function () { var m = minutesOfDay(Date.now()); if (m === 4 * 60) location.reload(); }, 60000);
+
+// First run: ask for the board link.
+function showSetup() {
+  document.body.innerHTML = '<div style="max-width: 640px; margin: 80px auto; padding: 0 24px; font-family: Georgia, serif; color: #F3E9D2">' +
+    '<h1 style="font-weight: 500">Family board setup</h1>' +
+    '<p>Paste your board link (it ends in <b>/exec?k=</b> and your key), then tap Save.</p>' +
+    '<input id="lnk" style="width: 100%; box-sizing: border-box; font-size: 18px; padding: 12px; border-radius: 8px; border: 1px solid #4A4466">' +
+    '<p><button id="sv" style="font-size: 20px; padding: 12px 28px; border-radius: 8px; border: 0; background: #C9B37E; color: #1C1A2E">Save</button></p>' +
+    '<p id="msg" style="color: #E8907F"></p></div>';
+  document.getElementById('sv').onclick = function () {
+    var v = document.getElementById('lnk').value.trim();
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[^\/?#]+\/exec\?k=/.test(v)) {
+      document.getElementById('msg').textContent = 'That doesn\'t look like the board link. It should start https://script.google.com/macros/s/ and contain /exec?k=';
+      return;
+    }
+    try { localStorage.setItem('boardLink', v); } catch (e) {}
+    location.reload();
+  };
+}
+if (!CFG) showSetup();
+</script>
+</body>
+</html>
