@@ -61,6 +61,7 @@
         <div id="todayLabel" class="label">TODAY</div>
         <div id="today" style="display: flex; flex-direction: column; gap: 10px"></div>
       </div>
+      <div id="binsNext"></div>
     </section>
 
     <section class="col-r">
@@ -311,7 +312,30 @@ function renderDrive(now) {
     '</div>';
 }
 
+function renderBinsNext(now, mins) {
+  var b = DATA.bins, el = $('binsNext');
+  if (!b) { el.innerHTML = ''; return; }
+  var pick = null, when = '';
+  if (b.today && mins < 12 * 60) { pick = b.today; when = 'TODAY'; }
+  else if (b.tomorrow) { pick = b.tomorrow; when = 'TOMORROW'; }
+  else if (b.next) { pick = b.next; }
+  if (!pick) { el.innerHTML = ''; return; }
+  if (!when && pick.date) {
+    var p = String(pick.date).split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    when = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }).toUpperCase();
+  }
+  var label = String(pick.label || ''), cut = label.indexOf(' & ');
+  var main = cut === -1 ? label : label.slice(0, cut), extra = cut === -1 ? '' : label.slice(cut + 3);
+  var brown = /brown/i.test(main), col = brown ? '#7A4A1E' : (/black/i.test(main) ? '#1C1A2E' : '#7A5C12');
+  el.innerHTML = '<div class="box row" style="gap: 14px; padding: 12px 16px">' +
+    '<span class="badge" style="background: #EFE4C6">' + svg('bin', col, 24) + '</span>' +
+    '<div class="grow" style="display: flex; flex-direction: column">' +
+      '<span class="cz" style="font-size: 12px; letter-spacing: .2em; color: #C9B37E">BINS · ' + esc(when) + '</span>' +
+      '<span style="font-size: 21px; font-weight: 500">' + esc(main) + (extra ? '<span class="muted" style="font-size: 17px; font-weight: 400"> + ' + esc(extra) + '</span>' : '') + '</span></div></div>';
+}
+
 function renderBins(now, mins) {
+  renderBinsNext(now, mins);
   var b = DATA.bins, el = $('binsTonight');
   if (!b || !b.tonight || mins < 17 * 60) { el.innerHTML = ''; return; }
   el.innerHTML = '<div class="row" style="gap: 14px; padding: 14px 16px; border: 2px solid #C9A44C; border-radius: 12px">' +
